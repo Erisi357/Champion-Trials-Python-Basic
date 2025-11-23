@@ -49,7 +49,7 @@ def start_quiz():
 
 def show_question():
     global current_question
-    if current_question > len(questions):
+    if current_question >= len(questions):
         messagebox.showinfo("Quiz finished", f"Your final score: {score}/{len(questions)}")
         root.destroy()
         return
