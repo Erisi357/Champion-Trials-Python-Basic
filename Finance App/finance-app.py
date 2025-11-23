@@ -3,49 +3,58 @@ from tkinter import messagebox
 import random
 import requests
 
-url_questions = "https://raw.githubusercontent.com/Erisi357/finance-quiz-data/refs/heads/main/questions.json"
-response = requests.get(url_questions)
-if response.status_code == 200:
-    questions = response.json()["questions"]
-else:
-    questions = []
+def fetch_json(url, key):
+    r = requests.get(url)
+    if r.status_code == 200:
+        return r.json().get(key, [])
+    return []
+
+questions = fetch_json(
+    "https://raw.githubusercontent.com/Erisi357/finance-quiz-data/refs/heads/main/questions.json",
+    "questions"
+)
+
+tips = fetch_json(
+    "https://raw.githubusercontent.com/Erisi357/finance-quiz-data/refs/heads/main/tips.json",
+    "tips"
+)
+
 
 random.shuffle(questions)
-
-url_tips = "https://raw.githubusercontent.com/Erisi357/finance-quiz-data/refs/heads/main/tips.json"
-response = requests.get(url_tips)
-if response.status_code == 200:
-    tips = response.json()["tips"]
-else:
-    tips = []
 
 current_question = 0
 score = 0
 current_tip = 0
 
 def start_quiz():
+    global score, current_question
+    score = 0
+    current_question = 0
     welcome_frame.pack_forget()
     tips_frame.pack_forget()
     quiz_frame.pack(fill="both", expand=True)
+    score_label.config(text=f"Score: {score}")
     show_question()
 
 def show_question():
     global current_question
-    if current_question < len(questions):
-        q = questions[current_question]
-        question_label.config(text=q["question"])
-        progress_label.config(text=f"Question {current_question + 1} of {len(questions)}")
-        options = q["options"].copy()
-        random.shuffle(options)
-        for i, option_text in enumerate(options):
-            if i < len(option_buttons):
-                option_buttons[i].config(text=option_text, command=lambda opt=option_text: check_answer(opt))
-                option_buttons[i].pack(fill="x", pady=5)
-        for i in range(len(options), len(option_buttons)):
-            option_buttons[i].pack_forget()
-    else:
-        messagebox.showinfo("Quiz Finished", f"Your final score: {score}/{len(questions)}")
+    if current_question > len(questions):
+        messagebox.showinfo("Quiz finished," f"Your final score: {score}/{len(questions)}")
         root.destroy()
+        return
+
+    q=questions[current_question]
+    question_label.config(text=q["question"])
+    progress_label.config(text=f"Question {current_question + 1} of {len(questions)}")
+
+    opts = q["options"][:]
+    random.shuffle(opts)
+
+    for i, text in enumerate(opts):
+        option_buttons[i].config(text=text, command=lambda t=text: check_answer(t))
+        option_buttons[i].pack(fill="x", pady=5)
+    for i in range(len(opts), len(option_buttons)):
+        option_buttons[i].pack_forget()
 
 def check_answer(selected_option):
     global current_question, score
@@ -108,10 +117,10 @@ tips_button.pack()
 quiz_frame = tk.Frame(root, padx=20, pady=20)
 
 progress_label = tk.Label(quiz_frame, text="", font=("Arial", 12))
-progress_label.pack(anchor="nw", pady=(0, 5), padx=10)
+progress_label.pack(anchor="w", side="top", fill="x", pady=(0, 5), padx=10)
 
 score_label = tk.Label(quiz_frame, text="", font=("Arial", 12))
-score_label.pack(anchor="nw", pady=(0, 10), padx=10)
+score_label.pack(anchor="e", fill="x", pady=(0, 10), padx=10)
 
 question_label = tk.Label(quiz_frame, text="", wraplength=500, font=("Arial", 16), justify="left")
 question_label.pack(fill="x", pady=(0, 20))
